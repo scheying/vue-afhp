@@ -5,11 +5,11 @@
         {{ domainlist.length + (domainlist.length > 1 || domainlist.length === 0 ? " domains" : " domain") }}
     </button>
 
-    <div class="domainlist" v-show="showDomainList">
-      <h5 v-for="domain in domainlist">
-        <strong>{{ domain }}</strong>&nbsp;
-        <i class="del-x" @click="removeFromDomainList(domain)">X</i>
-      </h5>
+    <div class="domainlist-container" v-show="showDomainList">
+      <div v-for="domain in domainlist">
+        {{ domain }}&nbsp;
+        <span  @click="removeFromDomainList(domain)"><icon name="trash"></icon></span>
+      </div>
     </div>
 
     <input v-model="domainname" placeholder="domainname">
@@ -18,7 +18,7 @@
       Start Domaincheck
     </button>
 
-    <h1>{{ msg }}</h1>
+    <icon name="refresh" v-show="showSpinner" spin></icon>
 
     <v-progress-linear v-bind:indeterminate="true"></v-progress-linear>
 
@@ -52,30 +52,31 @@ export default {
   name: 'domaincheck',
   data () {
     return {
-      msg: 'Das hier ist der Domaincheck',
       domains: [],
       domainlist: [],
       domainname: '',
-      showDomainList: false
+      showDomainList: false,
+      showSpinner: false
     }
   },
   methods: {
     startDomaincheck: function () {
-      console.log('Domaincheck starting...')
+      this.refresh
       this.msg = 'Domaincheck starting...'
-      getDomainStatus(this.domainname, (res) => {
+      this.showSpinner = true
+      getDomainStatus(this.domainname, (err, res) => {
+        if (err) console.error('HTTP ' + err)
+        this.showSpinner = false
         this.domains = res
       })
     },
     addToDomainlist: function (domain) {
       this.domainlist.push(domain)
-      console.log('hier' + domain)
     },
     removeFromDomainList: function (domain) {
       this.domainlist.splice(this.domainlist.indexOf(domain), 1)
     },
     contains: function (a, obj) {
-      console.log('contains: ' + obj)
       var i = a.length
       while (i--) {
         if (a[i] === obj) {
@@ -95,10 +96,10 @@ function getDomainStatus (domainname, cb) {
     }
   })
   .then(function (response) {
-    cb(parseRes(response.data))
+    cb(null, parseRes(response.data))
   })
   .catch(function (error) {
-    console.log(error)
+    cb(error)
   })
 }
 
@@ -158,17 +159,14 @@ div .vergeben {
   left: 10px;
 }
 
-.domainlist {
+.domainlist-container {
   border: 0;
   background: #dddddd;
   transition: all .1s ease-out;
   position: absolute;
+  padding: 10px;
   top: 10px;
   left: 85px;
   width: 200px;
-}
-
-.del-x {
-  font-weight: bold;
 }
 </style>
